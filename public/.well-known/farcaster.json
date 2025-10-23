@@ -4,6 +4,7 @@
   "description": "Claim territory, harvest resources, and battle for onchain pixel art supremacy",
   "iconUrl": "https://cast-colony.vercel.app/assets/icon-1024x1024.png",
   "homeUrl": "https://cast-colony.vercel.app",
+  "imageUrl": "https://cast-colony.vercel.app/assets/screenshot-main.png",
   "splashImageUrl": "https://cast-colony.vercel.app/assets/splash-200x200.png",
   "splashBackgroundColor": "#1a1a2e",
   "primaryCategory": "game",
