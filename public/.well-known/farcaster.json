@@ -1,18 +1,30 @@
 {
-  "name": "Cast Colony",
-  "subtitle": "Multiplayer Strategy Game",
-  "description": "Claim territory, harvest resources, and battle for onchain pixel art supremacy",
-  "iconUrl": "https://cast-colony.vercel.app/assets/icon-1024x1024.png",
-  "homeUrl": "https://cast-colony.vercel.app",
-  "imageUrl": "https://cast-colony.vercel.app/assets/screenshot-main.png",
-  "splashImageUrl": "https://cast-colony.vercel.app/assets/splash-200x200.png",
-  "splashBackgroundColor": "#1a1a2e",
-  "primaryCategory": "game",
-  "tags": [
-    "strategy",
-    "nft",
-    "web3",
-    "multiplayer",
-    "base"
-  ]
+  "frame": {
+    "name": "Cast-Colony",
+    "tags": [
+      "strategy",
+      "multiplayer",
+      "onchain",
+      "nft",
+      "pixel-art"
+    ],
+    "homeUrl": "https://cast-colony.vercel.app",
+    "iconUrl": "https://cast-colony.vercel.app/icon-1024x1024.png",
+    "ogTitle": "Multiplayer Strategy on Base",
+    "tagline": "Conquer onchain battlefield",
+    "version": "1",
+    "imageUrl": "https://cast-colony.vercel.app/assets/screenshot-main.png",
+    "subtitle": "Multiplayer Strategy Game",
+    "buttonTitle": "Play Cast Colony",
+    "description": "Claim territory, harvest resources, and battle for onchain pixel art supremacy on Base chain",
+    "ogDescription": "Join the battle for territory in this onchain strategy game",
+    "splashImageUrl": "https://cast-colony.vercel.app/assets/splash-200x200.png",
+    "primaryCategory": "games",
+    "splashBackgroundColor": "#1a1a2e"
+  },
+  "accountAssociation": {
+    "header": "eyJmaWQiOjEzODkwNDAsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHgwRThEOTI5MmU5NEM0QjYyZkJGMDVGOUUxRkM2YzU1OTZDMDJFNzc3In0",
+    "payload": "eyJkb21haW4iOiJjYXN0LWNvbG9ueS52ZXJjZWwuYXBwIn0",
+    "signature": "nd//Oq4mthqw/NU+7wiBCpBRX8i6z2bDY6YXiCeKOQA6JkJKR5gHEd4Vv+6U5o9sw4qOKYnN4uY3LpbsHFmN5Rw="
+  }
 }
