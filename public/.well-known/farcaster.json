@@ -1,0 +1,17 @@
+{
+  "name": "Cast Colony",
+  "subtitle": "Multiplayer Strategy Game",
+  "description": "Claim territory, harvest resources, and battle for onchain pixel art supremacy",
+  "iconUrl": "https://cast-colony.vercel.app/assets/icon-1024x1024.png",
+  "homeUrl": "https://cast-colony.vercel.app",
+  "splashImageUrl": "https://cast-colony.vercel.app/assets/splash-200x200.png",
+  "splashBackgroundColor": "#1a1a2e",
+  "primaryCategory": "game",
+  "tags": [
+    "strategy",
+    "nft",
+    "web3",
+    "multiplayer",
+    "base"
+  ]
+}
