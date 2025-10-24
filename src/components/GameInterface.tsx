@@ -236,33 +236,7 @@ export function GameInterface() {
           </div>
         </div>
 
-        {/* Game Instructions */}
-        <div className="mt-8 bg-white p-6 rounded-lg shadow border">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">How to Play Cast Colony</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
-            <div className="text-center">
-              <div className="text-3xl mb-2">🏗️</div>
-              <h4 className="font-semibold text-green-600 mb-2">Claim Territory</h4>
-              <p className="text-gray-600">
-                Click empty tiles adjacent to your territory to claim them for 100 GEMS each.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl mb-2">🌾</div>
-              <h4 className="font-semibold text-yellow-600 mb-2">Harvest Resources</h4>
-              <p className="text-gray-600">
-                Each tile generates 10 GEMS per hour. Harvest regularly to build your treasury.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl mb-2">⚔️</div>
-              <h4 className="font-semibold text-red-600 mb-2">Battle Enemies</h4>
-              <p className="text-gray-600">
-                Attack enemy tiles with GEMS. Higher commitment increases your chance of victory.
-              </p>
-            </div>
-          </div>
-        </div>
+
       </div>
     </div>
   );

@@ -75,12 +75,12 @@ export function WalletConnection() {
   // Show Farcaster wallet if connected
   if (isInFarcaster && farcasterWallet) {
     return (
-      <div className="flex items-center gap-3 p-3 bg-purple-800 rounded-lg">
-        <div className="flex flex-col">
-          <span className="text-sm text-purple-200">Connected via Farcaster</span>
-          <span className="text-sm font-mono text-white">
+      <div className="flex items-center justify-between p-3 bg-purple-800 rounded-lg">
+        <div>
+          <div className="text-sm text-purple-200">Connected via Farcaster</div>
+          <div className="text-sm font-mono text-white">
             {farcasterWallet.address.slice(0, 6)}...{farcasterWallet.address.slice(-4)}
-          </span>
+          </div>
         </div>
         <div className="text-purple-200 text-xs">
           🟣 Farcaster
@@ -92,16 +92,16 @@ export function WalletConnection() {
   // Show regular wagmi wallet if connected
   if (isConnected && address) {
     return (
-      <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg">
-        <div className="flex flex-col">
-          <span className="text-sm text-gray-400">Connected</span>
-          <span className="text-sm font-mono">
+      <div className="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
+        <div>
+          <div className="text-sm text-gray-400">Connected</div>
+          <div className="text-sm font-mono text-white">
             {address.slice(0, 6)}...{address.slice(-4)}
-          </span>
+          </div>
         </div>
         <button
           onClick={() => disconnect()}
-          className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 rounded transition-colors"
+          className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
         >
           Disconnect
         </button>

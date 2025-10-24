@@ -13,7 +13,7 @@ export function GameMap({ onTileClick }: GameMapProps) {
 
   const handleTileClick = (x: number, y: number) => {
     const coordinate = { x, y };
-    
+
     // Set selected tile
     dispatch({
       type: 'SET_SELECTED_TILE',
@@ -28,21 +28,21 @@ export function GameMap({ onTileClick }: GameMapProps) {
 
   const getTileStatus = (x: number, y: number) => {
     const tile = getTileByCoordinate(x, y);
-    
+
     if (!tile) {
       return canClaimTile(x, y) ? 'claimable' : 'empty';
     }
-    
+
     if (tile.owner === userState.colony?.owner) {
       return 'owned';
     }
-    
+
     return 'enemy';
   };
 
   const getTileColor = (status: string, isSelected: boolean) => {
     const baseClasses = 'transition-all duration-200 border-2';
-    
+
     if (isSelected) {
       return `${baseClasses} border-yellow-400 ring-2 ring-yellow-300 ring-opacity-50`;
     }
@@ -62,27 +62,27 @@ export function GameMap({ onTileClick }: GameMapProps) {
 
   const getTileContent = (x: number, y: number, status: string) => {
     const tile = getTileByCoordinate(x, y);
-    
+
     if (status === 'owned' && tile) {
       const gemsAccumulated = Math.floor((Date.now() - tile.lastHarvest) / (1000 * 60 * 60));
       return (
         <div className="text-center">
-          <div className="text-xs font-bold text-white">
+          <div className="text-xs font-bold text-black">
             {gemsAccumulated}
           </div>
-          <div className="text-xs text-green-100">GEMS</div>
+          <div className="text-xs text-black">GEMS</div>
         </div>
       );
     }
-    
+
     if (status === 'enemy' && tile) {
       return (
         <div className="text-center">
-          <div className="text-xs font-bold text-white">⚔️</div>
+          <div className="text-xs font-bold text-black">⚔️</div>
         </div>
       );
     }
-    
+
     if (status === 'claimable') {
       return (
         <div className="text-center">
@@ -91,7 +91,7 @@ export function GameMap({ onTileClick }: GameMapProps) {
         </div>
       );
     }
-    
+
     return (
       <div className="text-center">
         <div className="text-xs text-gray-500">
@@ -103,12 +103,12 @@ export function GameMap({ onTileClick }: GameMapProps) {
 
   const renderGrid = () => {
     const tiles = [];
-    
+
     for (let y = 0; y < gameState.mapSize.height; y++) {
       for (let x = 0; x < gameState.mapSize.width; x++) {
         const status = getTileStatus(x, y);
         const isSelected = selectedTile?.x === x && selectedTile?.y === y;
-        
+
         tiles.push(
           <div
             key={`${x}-${y}`}
@@ -126,19 +126,18 @@ export function GameMap({ onTileClick }: GameMapProps) {
                 handleTileClick(x, y);
               }
             }}
-            aria-label={`Tile at ${x}, ${y}. ${
-              status === 'owned' ? 'Your territory' :
+            aria-label={`Tile at ${x}, ${y}. ${status === 'owned' ? 'Your territory' :
               status === 'enemy' ? 'Enemy territory' :
-              status === 'claimable' ? 'Available to claim' :
-              'Empty tile'
-            }`}
+                status === 'claimable' ? 'Available to claim' :
+                  'Empty tile'
+              }`}
           >
             {getTileContent(x, y, status)}
           </div>
         );
       }
     }
-    
+
     return tiles;
   };
 
@@ -150,25 +149,26 @@ export function GameMap({ onTileClick }: GameMapProps) {
         <div className="flex justify-center space-x-4 text-sm">
           <div className="flex items-center">
             <div className="w-4 h-4 bg-green-500 border border-green-600 rounded mr-2"></div>
-            <span>Your Tiles</span>
+            <span className="text-black font-medium">Your Tiles</span>
           </div>
           <div className="flex items-center">
             <div className="w-4 h-4 bg-red-500 border border-red-600 rounded mr-2"></div>
-            <span>Enemy Tiles</span>
+            <span className="text-black font-medium">Enemy Tiles</span>
           </div>
           <div className="flex items-center">
             <div className="w-4 h-4 bg-blue-200 border border-blue-300 rounded mr-2"></div>
-            <span>Claimable</span>
+            <span className="text-black font-medium">Claimable</span>
           </div>
           <div className="flex items-center">
             <div className="w-4 h-4 bg-gray-200 border border-gray-300 rounded mr-2"></div>
-            <span>Empty</span>
+            <span className="text-black font-medium">Empty</span>
+            <span className="text-black font-medium">Empty</span>
           </div>
         </div>
       </div>
 
       {/* Game Map Grid */}
-      <div 
+      <div
         className="grid gap-1 bg-gray-100 p-2 rounded-lg shadow-inner"
         style={{
           gridTemplateColumns: `repeat(${gameState.mapSize.width}, minmax(0, 1fr))`,
@@ -186,7 +186,7 @@ export function GameMap({ onTileClick }: GameMapProps) {
           {(() => {
             const tile = getTileByCoordinate(selectedTile.x, selectedTile.y);
             const status = getTileStatus(selectedTile.x, selectedTile.y);
-            
+
             if (status === 'owned' && tile) {
               const gemsAccumulated = Math.floor((Date.now() - tile.lastHarvest) / (1000 * 60 * 60));
               return (
@@ -197,7 +197,7 @@ export function GameMap({ onTileClick }: GameMapProps) {
                 </div>
               );
             }
-            
+
             if (status === 'enemy' && tile) {
               return (
                 <div className="text-sm text-gray-600">
@@ -206,7 +206,7 @@ export function GameMap({ onTileClick }: GameMapProps) {
                 </div>
               );
             }
-            
+
             if (status === 'claimable') {
               return (
                 <div className="text-sm text-gray-600">
@@ -216,7 +216,7 @@ export function GameMap({ onTileClick }: GameMapProps) {
                 </div>
               );
             }
-            
+
             return (
               <div className="text-sm text-gray-600">
                 <p>Status: <span className="text-gray-500 font-medium">Empty</span></p>

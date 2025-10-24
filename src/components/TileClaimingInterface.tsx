@@ -126,10 +126,6 @@ export function TileClaimingInterface({ selectedTile, onClaimSuccess }: TileClai
         {status.canClaim && (
           <div className="space-y-2 text-sm text-gray-600">
             <div className="flex justify-between">
-              <span>Cost:</span>
-              <span className="font-medium text-green-600">FREE (Testing)</span>
-            </div>
-            <div className="flex justify-between">
               <span>Your Balance:</span>
               <span className="font-medium text-green-600">
                 {currentBalance} GEMS
