@@ -12,17 +12,38 @@ import {
   useAirdropNewPlayer,
   formatGemsBalance 
 } from './useWeb3Contracts';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export function useGameWeb3() {
   const { address, isConnected } = useAccount();
   const { state, dispatch } = useGame();
+  
+  // Check for Farcaster wallet
+  const [farcasterAddress, setFarcasterAddress] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const checkFarcasterWallet = () => {
+      const sdk = (window as any).farcaster || (window as any).farcasterSdk;
+      if (sdk && sdk.context && sdk.context.wallet) {
+        setFarcasterAddress(sdk.context.wallet.address);
+      }
+    };
+    
+    checkFarcasterWallet();
+    const timer = setInterval(checkFarcasterWallet, 2000);
+    
+    return () => clearInterval(timer);
+  }, []);
+  
+  // Use Farcaster address if available, otherwise wagmi address
+  const currentAddress = farcasterAddress || address;
+  const currentIsConnected = !!farcasterAddress || isConnected;
 
-  // Get on-chain data
-  const { data: gemsBalance, refetch: refetchGems } = useGemsBalance(address);
-  const { data: tilePrice, refetch: refetchTilePrice } = useTilePrice(address);
-  const { data: playerTileCount } = usePlayerTileCount(address);
-  const { data: hasReceivedAirdrop } = useHasReceivedAirdrop(address);
+  // Get on-chain data (use current address)
+  const { data: gemsBalance, refetch: refetchGems } = useGemsBalance(currentAddress as `0x${string}`);
+  const { data: tilePrice, refetch: refetchTilePrice } = useTilePrice(currentAddress as `0x${string}`);
+  const { data: playerTileCount } = usePlayerTileCount(currentAddress as `0x${string}`);
+  const { data: hasReceivedAirdrop } = useHasReceivedAirdrop(currentAddress as `0x${string}`);
 
   // Contract interaction hooks
   const tileClaimHook = useClaimTile();
@@ -31,7 +52,7 @@ export function useGameWeb3() {
 
   // Sync on-chain GEMS balance with game state
   useEffect(() => {
-    if (gemsBalance && isConnected && typeof gemsBalance === 'bigint') {
+    if (gemsBalance && currentIsConnected && typeof gemsBalance === 'bigint') {
       const formattedBalance = parseInt(formatGemsBalance(gemsBalance));
       
       // Update local state to match on-chain balance
@@ -42,7 +63,7 @@ export function useGameWeb3() {
         });
       }
     }
-  }, [gemsBalance, isConnected, state.userState.treasury, dispatch]);
+  }, [gemsBalance, currentIsConnected, state.userState.treasury, dispatch]);
 
   // Sync tiles when tile claim is confirmed
   useEffect(() => {
@@ -62,15 +83,15 @@ export function useGameWeb3() {
 
   // Auto-claim airdrop for new players
   useEffect(() => {
-    if (isConnected && hasReceivedAirdrop === false && !airdropHook.isPending) {
+    if (currentIsConnected && hasReceivedAirdrop === false && !airdropHook.isPending) {
       console.log('New player detected, claiming airdrop...');
       airdropHook.claimAirdrop();
     }
-  }, [isConnected, hasReceivedAirdrop, airdropHook]);
+  }, [currentIsConnected, hasReceivedAirdrop, airdropHook]);
 
   // Claim tile function that interacts with blockchain
   const claimTileOnChain = async (x: number, y: number) => {
-    if (!isConnected || !address) {
+    if (!currentIsConnected || !currentAddress) {
       throw new Error('Wallet not connected');
     }
 
@@ -94,7 +115,7 @@ export function useGameWeb3() {
 
   // Harvest GEMS function
   const harvestGemsOnChain = async (tileIds: number[]) => {
-    if (!isConnected || !address) {
+    if (!currentIsConnected || !currentAddress) {
       throw new Error('Wallet not connected');
     }
 
@@ -117,7 +138,7 @@ export function useGameWeb3() {
 
   // Load player's tiles from blockchain
   const loadPlayerTilesFromBlockchain = async () => {
-    if (!isConnected || !address) return [];
+    if (!currentIsConnected || !currentAddress) return [];
 
     try {
       const tileCount = playerTileCount ? parseInt(playerTileCount.toString()) : 0;
@@ -160,7 +181,7 @@ export function useGameWeb3() {
 
   // Sync function to refresh all balances
   const syncWithBlockchain = async () => {
-    if (isConnected) {
+    if (currentIsConnected) {
       await Promise.all([
         refetchGems(),
         refetchTilePrice(),
@@ -170,8 +191,8 @@ export function useGameWeb3() {
 
   return {
     // Connection status
-    isConnected,
-    address,
+    isConnected: currentIsConnected,
+    address: currentAddress,
 
     // Balances and game state
     gemsBalance: gemsBalance && typeof gemsBalance === 'bigint' ? formatGemsBalance(gemsBalance) : '0',
