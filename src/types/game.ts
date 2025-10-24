@@ -56,7 +56,8 @@ export type GameAction =
   | { type: 'REVEAL_ATTACK'; payload: { targetX: number; targetY: number } }
   | { type: 'RESOLVE_BATTLE'; payload: { targetX: number; targetY: number; attackerGems: number; defenderGems: number; attacker: string } }
   | { type: 'ADVANCE_PHASE' }
-  | { type: 'RESET_GAME' };
+  | { type: 'RESET_GAME' }
+  | { type: 'SYNC_WALLET_BALANCE'; payload: { balance: number } };
 
 // Combined app state
 export interface AppState {

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useGame } from '@/context/GameContext';
+import { useGameWeb3 } from '@/hooks/useGameWeb3';
+import { WalletConnection } from './WalletConnection';
 
 interface ColonyDashboardProps {
   onHarvestAll?: (gemsHarvested: number) => void;
@@ -10,6 +12,7 @@ interface ColonyDashboardProps {
 
 export function ColonyDashboard({ onHarvestAll, onClaimTile }: ColonyDashboardProps) {
   const { state, dispatch, getTotalHarvestableGems, canClaimTile } = useGame();
+  const { isConnected, gemsBalance, currentTilePrice, hasReceivedAirdrop, airdrop } = useGameWeb3();
   const { userState, selectedTile } = state;
   const [currentTime, setCurrentTime] = useState(Date.now());
 
@@ -88,8 +91,12 @@ export function ColonyDashboard({ onHarvestAll, onClaimTile }: ColonyDashboardPr
             </p>
           </div>
           <div className="text-right">
-            <div className="text-3xl font-bold">{userState.treasury}</div>
-            <div className="text-purple-100">GEMS</div>
+            <div className="text-3xl font-bold">
+              {isConnected ? parseInt(gemsBalance) : userState.treasury}
+            </div>
+            <div className="text-purple-100">
+              GEMS {isConnected && '(On-chain)'}
+            </div>
           </div>
         </div>
       </div>
@@ -131,6 +138,51 @@ export function ColonyDashboard({ onHarvestAll, onClaimTile }: ColonyDashboardPr
           </div>
           <div className="text-sm text-gray-600">GEMS Available</div>
         </div>
+      </div>
+
+      {/* Wallet Connection */}
+      <div className="bg-white p-4 rounded-lg shadow border">
+        <h3 className="font-semibold text-gray-800 mb-4">Web3 Integration</h3>
+        <WalletConnection />
+        
+        {/* Airdrop Status */}
+        {isConnected && (
+          <div className="mt-4 p-3 rounded-lg border">
+            {airdrop.isPending || airdrop.isConfirming ? (
+              <div className="flex items-center text-blue-600">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                <span className="text-sm">
+                  {airdrop.isPending ? 'Claiming airdrop...' : 'Confirming airdrop...'}
+                </span>
+              </div>
+            ) : hasReceivedAirdrop ? (
+              <div className="flex items-center text-green-600">
+                <span className="mr-2">✅</span>
+                <span className="text-sm">Airdrop received (100 GEMS)</span>
+              </div>
+            ) : (
+              <div className="flex items-center text-yellow-600">
+                <span className="mr-2">🎁</span>
+                <span className="text-sm">New player airdrop pending...</span>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Pricing Info */}
+        {isConnected && (
+          <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+            <div className="text-sm text-blue-800">
+              <div className="flex justify-between">
+                <span>Next tile cost:</span>
+                <span className="font-medium">{currentTilePrice} GEMS</span>
+              </div>
+              <div className="text-xs text-blue-600 mt-1">
+                Price increases by 50 GEMS per tile owned
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Action Buttons */}

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGame } from '@/context/GameContext';
+import { useGameWeb3 } from '@/hooks/useGameWeb3';
 import { Coordinate } from '@/types/game';
 import { LoadingSpinner } from './LoadingSpinner';
 
@@ -12,8 +13,38 @@ interface TileClaimingInterfaceProps {
 
 export function TileClaimingInterface({ selectedTile, onClaimSuccess }: TileClaimingInterfaceProps) {
   const { state, dispatch, canClaimTile, getTileByCoordinate } = useGame();
+  const { isConnected, claimTileOnChain, claimTile, currentTilePrice, gemsBalance } = useGameWeb3();
   const [isProcessing, setIsProcessing] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
+
+  // Watch for successful tile claim transaction
+  useEffect(() => {
+    if (claimTile.isConfirmed && !isProcessing) {
+      // Transaction confirmed, update local game state
+      if (selectedTile && state.userState.colony) {
+        dispatch({
+          type: 'CLAIM_TILE',
+          payload: {
+            x: selectedTile.x,
+            y: selectedTile.y,
+            owner: state.userState.colony.owner,
+          },
+        });
+
+        if (onClaimSuccess) {
+          onClaimSuccess();
+        }
+      }
+    }
+  }, [claimTile.isConfirmed, selectedTile, state.userState.colony, dispatch, onClaimSuccess, isProcessing]);
+
+  // Watch for transaction errors
+  useEffect(() => {
+    if (claimTile.error) {
+      setClaimError(claimTile.error.message || 'Transaction failed');
+      setIsProcessing(false);
+    }
+  }, [claimTile.error]);
 
   if (!selectedTile || !state.userState.colony) {
     return null;
@@ -21,7 +52,9 @@ export function TileClaimingInterface({ selectedTile, onClaimSuccess }: TileClai
 
   const tile = getTileByCoordinate(selectedTile.x, selectedTile.y);
   const canClaim = canClaimTile(selectedTile.x, selectedTile.y);
-  const hasInsufficientFunds = state.userState.treasury < 100;
+  const tilePrice = isConnected ? currentTilePrice : 100;
+  const currentBalance = isConnected ? parseInt(gemsBalance) : state.userState.treasury;
+  const hasInsufficientFunds = currentBalance < tilePrice;
 
   const getClaimabilityStatus = () => {
     if (tile) {
@@ -32,7 +65,7 @@ export function TileClaimingInterface({ selectedTile, onClaimSuccess }: TileClai
     }
 
     if (hasInsufficientFunds) {
-      return { canClaim: false, reason: 'Insufficient GEMS (need 100)' };
+      return { canClaim: false, reason: `Insufficient GEMS (need ${tilePrice})` };
     }
 
     if (state.userState.ownedTiles.length === 0) {
@@ -53,24 +86,30 @@ export function TileClaimingInterface({ selectedTile, onClaimSuccess }: TileClai
     setClaimError(null);
 
     try {
-      // Simulate network delay for claiming
-      await new Promise(resolve => setTimeout(resolve, 300));
+      if (isConnected) {
+        // Use blockchain transaction
+        await claimTileOnChain(selectedTile.x, selectedTile.y);
+        // The rest will be handled by the useEffect watching for confirmation
+      } else {
+        // Fallback to local state only (for development/testing)
+        await new Promise(resolve => setTimeout(resolve, 300));
 
-      dispatch({
-        type: 'CLAIM_TILE',
-        payload: {
-          x: selectedTile.x,
-          y: selectedTile.y,
-          owner: state.userState.colony.owner,
-        },
-      });
+        dispatch({
+          type: 'CLAIM_TILE',
+          payload: {
+            x: selectedTile.x,
+            y: selectedTile.y,
+            owner: state.userState.colony.owner,
+          },
+        });
 
-      if (onClaimSuccess) {
-        onClaimSuccess();
+        if (onClaimSuccess) {
+          onClaimSuccess();
+        }
+        setIsProcessing(false);
       }
-    } catch (error) {
-      setClaimError('Failed to claim tile. Please try again.');
-    } finally {
+    } catch (error: any) {
+      setClaimError(error.message || 'Failed to claim tile. Please try again.');
       setIsProcessing(false);
     }
   };
@@ -103,22 +142,27 @@ export function TileClaimingInterface({ selectedTile, onClaimSuccess }: TileClai
           <div className="space-y-2 text-sm text-gray-600">
             <div className="flex justify-between">
               <span>Cost:</span>
-              <span className="font-medium">100 GEMS</span>
+              <span className="font-medium">{tilePrice} GEMS</span>
             </div>
             <div className="flex justify-between">
-              <span>Your Treasury:</span>
+              <span>Your Balance:</span>
               <span className={`font-medium ${
-                state.userState.treasury >= 100 ? 'text-green-600' : 'text-red-600'
+                currentBalance >= tilePrice ? 'text-green-600' : 'text-red-600'
               }`}>
-                {state.userState.treasury} GEMS
+                {currentBalance} GEMS
               </span>
             </div>
             <div className="flex justify-between">
               <span>After Claiming:</span>
               <span className="font-medium">
-                {state.userState.treasury - 100} GEMS
+                {currentBalance - tilePrice} GEMS
               </span>
             </div>
+            {isConnected && (
+              <div className="text-xs text-blue-600 mt-2">
+                💡 Next tile will cost {tilePrice + 50} GEMS
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -160,23 +204,49 @@ export function TileClaimingInterface({ selectedTile, onClaimSuccess }: TileClai
         </div>
       )}
 
+      {/* Connection Status */}
+      {!isConnected && (
+        <div className="mb-3 p-3 bg-yellow-100 border border-yellow-300 text-yellow-700 rounded-lg text-sm">
+          <div className="flex items-center">
+            <span className="mr-2">⚠️</span>
+            Wallet not connected. Claims will be local only.
+          </div>
+        </div>
+      )}
+
+      {/* Transaction Status */}
+      {(claimTile.isPending || claimTile.isConfirming) && (
+        <div className="mb-3 p-3 bg-blue-100 border border-blue-300 text-blue-700 rounded-lg text-sm">
+          <div className="flex items-center">
+            <LoadingSpinner size="sm" className="mr-2" />
+            {claimTile.isPending ? 'Sending transaction...' : 'Confirming transaction...'}
+          </div>
+          {claimTile.hash && (
+            <div className="mt-1 text-xs">
+              Hash: {claimTile.hash.slice(0, 10)}...{claimTile.hash.slice(-8)}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Claim Button */}
       <button
         onClick={handleClaimTile}
-        disabled={!status.canClaim || isProcessing}
+        disabled={!status.canClaim || isProcessing || claimTile.isPending || claimTile.isConfirming}
         className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 ${
-          status.canClaim && !isProcessing
+          status.canClaim && !isProcessing && !claimTile.isPending && !claimTile.isConfirming
             ? 'bg-green-500 hover:bg-green-600 text-white transform hover:scale-105'
             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
         }`}
       >
-        {isProcessing ? (
+        {isProcessing || claimTile.isPending || claimTile.isConfirming ? (
           <div className="flex items-center justify-center">
             <LoadingSpinner size="sm" color="white" className="mr-2" />
-            Claiming Tile...
+            {claimTile.isPending ? 'Sending Transaction...' : 
+             claimTile.isConfirming ? 'Confirming...' : 'Claiming Tile...'}
           </div>
         ) : status.canClaim ? (
-          'Claim Tile for 100 GEMS'
+          isConnected ? `Claim Tile on Blockchain (${tilePrice} GEMS)` : `Claim Tile for ${tilePrice} GEMS`
         ) : (
           'Cannot Claim Tile'
         )}

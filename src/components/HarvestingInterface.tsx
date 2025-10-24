@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useGame } from '@/context/GameContext';
+import { useGameWeb3 } from '@/hooks/useGameWeb3';
 import { TileData } from '@/types/game';
 import { LoadingSpinner } from './LoadingSpinner';
 
@@ -11,6 +12,7 @@ interface HarvestingInterfaceProps {
 
 export function HarvestingInterface({ onHarvestSuccess }: HarvestingInterfaceProps) {
   const { state, dispatch, getTotalHarvestableGems } = useGame();
+  const { isConnected, harvestGemsOnChain, harvest, gemsBalance } = useGameWeb3();
   const [isHarvesting, setIsHarvesting] = useState(false);
   const [harvestingTiles, setHarvestingTiles] = useState<Set<string>>(new Set());
   const [currentTime, setCurrentTime] = useState(Date.now());
@@ -50,17 +52,28 @@ export function HarvestingInterface({ onHarvestSuccess }: HarvestingInterfacePro
     setHarvestingTiles(prev => new Set(prev).add(tileKey));
 
     try {
-      // Simulate harvesting delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (isConnected) {
+        // Use blockchain transaction
+        const tokenId = tile.x * 1000 + tile.y;
+        await harvestGemsOnChain([tokenId]);
+        
+        // Wait for transaction confirmation
+        // The balance will be updated automatically via useGameWeb3
+      } else {
+        // Fallback to local state
+        await new Promise(resolve => setTimeout(resolve, 500));
 
-      dispatch({
-        type: 'HARVEST_GEMS',
-        payload: { tileKeys: [tileKey] },
-      });
+        dispatch({
+          type: 'HARVEST_GEMS',
+          payload: { tileKeys: [tileKey] },
+        });
+      }
 
       if (onHarvestSuccess) {
         onHarvestSuccess(gemsToHarvest);
       }
+    } catch (error) {
+      console.error('Error harvesting tile:', error);
     } finally {
       setHarvestingTiles(prev => {
         const newSet = new Set(prev);
@@ -78,18 +91,29 @@ export function HarvestingInterface({ onHarvestSuccess }: HarvestingInterfacePro
     const totalGems = harvestableTiles.reduce((sum, tile) => sum + calculateTileGems(tile), 0);
 
     try {
-      // Simulate harvesting delay
-      await new Promise(resolve => setTimeout(resolve, 800));
+      if (isConnected) {
+        // Use blockchain transaction
+        const tokenIds = harvestableTiles.map(tile => tile.x * 1000 + tile.y);
+        await harvestGemsOnChain(tokenIds);
+        
+        // Wait for transaction confirmation
+        // The balance will be updated automatically via useGameWeb3
+      } else {
+        // Fallback to local state
+        await new Promise(resolve => setTimeout(resolve, 800));
 
-      const tileKeys = harvestableTiles.map(tile => `${tile.x},${tile.y}`);
-      dispatch({
-        type: 'HARVEST_GEMS',
-        payload: { tileKeys },
-      });
+        const tileKeys = harvestableTiles.map(tile => `${tile.x},${tile.y}`);
+        dispatch({
+          type: 'HARVEST_GEMS',
+          payload: { tileKeys },
+        });
+      }
 
       if (onHarvestSuccess) {
         onHarvestSuccess(totalGems);
       }
+    } catch (error) {
+      console.error('Error harvesting all tiles:', error);
     } finally {
       setIsHarvesting(false);
     }
@@ -111,10 +135,16 @@ export function HarvestingInterface({ onHarvestSuccess }: HarvestingInterfacePro
           <span className="text-sm font-medium text-gray-700">Total Harvestable:</span>
           <span className="text-2xl font-bold text-yellow-600">{totalHarvestable} 💎</span>
         </div>
-        <div className="flex items-center justify-between text-sm text-gray-600">
+        <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
           <span>Production Rate:</span>
           <span>{state.userState.ownedTiles.length} GEMS/hour</span>
         </div>
+        {isConnected && (
+          <div className="flex items-center justify-between text-sm text-gray-600">
+            <span>On-chain Balance:</span>
+            <span>{gemsBalance} GEMS</span>
+          </div>
+        )}
       </div>
 
       {/* Harvest All Button */}

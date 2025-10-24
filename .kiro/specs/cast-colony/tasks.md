@@ -152,17 +152,65 @@ Add smart contracts and Web3 functionality
 
 ## Phase 3: Blockchain Integration
 
-- [ ] 6. Smart Contract Development
-  - [ ] 6.1 Create GEMS token contract (ERC-20)
-  - [ ] 6.2 Create Land Tile NFT contract (ERC-721)  
-  - [ ] 6.3 Create Game Logic contract
-  - [ ] 6.4 Deploy contracts to Base chain
+- [x] 6. Smart Contract Development
 
-- [ ] 7. Web3 Integration
-  - [ ] 7.1 Add wagmi and Web3 dependencies
-  - [ ] 7.2 Implement wallet connection (Coinbase Smart Wallet)
-  - [ ] 7.3 Connect game actions to smart contracts
-  - [ ] 7.4 Add transaction handling and error management
+
+
+
+
+
+
+
+
+  - [x] 6.1 Create GEMS token contract (ERC-20)
+
+
+
+
+
+
+
+
+  - [x] 6.2 Create Land Tile NFT contract (ERC-721)  
+
+
+
+
+
+
+  - [x] 6.3 Create Game Logic contract
+
+
+
+
+  - [x] 6.4 Deploy contracts to Base chain
+
+
+
+
+
+
+- [x] 7. Web3 Integration
+
+
+
+
+
+  - [x] 7.1 Add wagmi and Web3 dependencies
+
+
+
+
+
+  - [x] 7.2 Implement wallet connection (Coinbase Smart Wallet)
+
+  - [x] 7.3 Connect game actions to smart contracts
+
+
+  - [x] 7.4 Add transaction handling and error management
+
+
+
 
 - [ ] 8. Advanced Features
   - [ ] 8.1 Implement commit/reveal battle system

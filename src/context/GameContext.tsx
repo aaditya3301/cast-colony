@@ -10,7 +10,24 @@ const getTileKey = (x: number, y: number): string => `${x},${y}`;
 const createInitialTiles = (): Map<string, TileData> => {
     const tiles = new Map<string, TileData>();
     
-    // Add some enemy tiles for demo purposes
+    // Try to load tiles from localStorage first (only on client side)
+    if (typeof window !== 'undefined') {
+        try {
+            const savedTiles = localStorage.getItem('castColony_tiles');
+            if (savedTiles) {
+                const tilesArray = JSON.parse(savedTiles);
+                tilesArray.forEach(([key, tile]: [string, TileData]) => {
+                    tiles.set(key, tile);
+                });
+                console.log('Loaded tiles from localStorage:', tiles.size);
+                return tiles;
+            }
+        } catch (error) {
+            console.warn('Failed to load tiles from localStorage:', error);
+        }
+    }
+    
+    // Add some enemy tiles for demo purposes (only if no saved tiles)
     const enemyTiles = [
         { x: 5, y: 5, owner: 'enemy_player_1' },
         { x: 6, y: 5, owner: 'enemy_player_1' },
@@ -31,6 +48,23 @@ const createInitialTiles = (): Map<string, TileData> => {
     return tiles;
 };
 
+// Load owned tiles from localStorage
+const loadOwnedTiles = (): TileData[] => {
+    if (typeof window === 'undefined') return []; // SSR check
+    
+    try {
+        const savedOwnedTiles = localStorage.getItem('castColony_ownedTiles');
+        if (savedOwnedTiles) {
+            const ownedTiles = JSON.parse(savedOwnedTiles);
+            console.log('Loaded owned tiles from localStorage:', ownedTiles.length);
+            return ownedTiles;
+        }
+    } catch (error) {
+        console.warn('Failed to load owned tiles from localStorage:', error);
+    }
+    return [];
+};
+
 const initialState: AppState = {
     gameState: {
         currentRound: 1,
@@ -42,7 +76,7 @@ const initialState: AppState = {
     userState: {
         colony: null,
         treasury: 0,
-        ownedTiles: [],
+        ownedTiles: loadOwnedTiles(),
         pendingMoves: [],
     },
     selectedTile: null,
@@ -105,20 +139,6 @@ function gameReducer(state: AppState, action: GameAction): AppState {
                 };
             }
 
-            if (state.userState.treasury < 100) {
-                return {
-                    ...state,
-                    error: 'Insufficient GEMS (need 100)',
-                };
-            }
-
-            if (!isAdjacent(x, y, state.userState.ownedTiles)) {
-                return {
-                    ...state,
-                    error: 'Tile must be adjacent to existing tiles',
-                };
-            }
-
             // Create new tile
             const newTile: TileData = {
                 x,
@@ -133,8 +153,8 @@ function gameReducer(state: AppState, action: GameAction): AppState {
             newTiles.set(tileKey, newTile);
 
             const updatedOwnedTiles = [...state.userState.ownedTiles, newTile];
-
-            return {
+            
+            const newState = {
                 ...state,
                 gameState: {
                     ...state.gameState,
@@ -142,7 +162,6 @@ function gameReducer(state: AppState, action: GameAction): AppState {
                 },
                 userState: {
                     ...state.userState,
-                    treasury: state.userState.treasury - 100,
                     ownedTiles: updatedOwnedTiles,
                     colony: state.userState.colony ? {
                         ...state.userState.colony,
@@ -152,6 +171,18 @@ function gameReducer(state: AppState, action: GameAction): AppState {
                 selectedTile: null,
                 error: null,
             };
+
+            // Save to localStorage for persistence (only on client side)
+            if (typeof window !== 'undefined') {
+                try {
+                    localStorage.setItem('castColony_tiles', JSON.stringify(Array.from(newTiles.entries())));
+                    localStorage.setItem('castColony_ownedTiles', JSON.stringify(updatedOwnedTiles));
+                } catch (error) {
+                    console.warn('Failed to save tiles to localStorage:', error);
+                }
+            }
+
+            return newState;
         }
 
         case 'HARVEST_GEMS': {
@@ -372,6 +403,16 @@ function gameReducer(state: AppState, action: GameAction): AppState {
                     currentPhase: newPhase,
                     currentRound: newRound,
                     phaseEndTime: newPhaseEndTime,
+                },
+            };
+        }
+
+        case 'SYNC_WALLET_BALANCE': {
+            return {
+                ...state,
+                userState: {
+                    ...state.userState,
+                    treasury: action.payload.balance,
                 },
             };
         }

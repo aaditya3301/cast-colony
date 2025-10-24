@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { GameProvider } from "@/context";
+import { Web3Provider } from "@/context/Web3Context";
 import { FarcasterSDK } from "@/components/FarcasterSDK";
 import "./globals.css";
 
@@ -56,9 +57,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <FarcasterSDK />
-        <GameProvider>
-          {children}
-        </GameProvider>
+        <Web3Provider>
+          <GameProvider>
+            {children}
+          </GameProvider>
+        </Web3Provider>
       </body>
     </html>
   );
