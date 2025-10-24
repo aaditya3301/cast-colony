@@ -20,6 +20,7 @@ export function useGameWeb3() {
   
   // Check for Farcaster wallet
   const [farcasterAddress, setFarcasterAddress] = useState<string | null>(null);
+  const [airdropAttempted, setAirdropAttempted] = useState(false);
   
   useEffect(() => {
     const checkFarcasterWallet = () => {
@@ -81,13 +82,34 @@ export function useGameWeb3() {
     }
   }, [harvestHook.isConfirmed]);
 
-  // Auto-claim airdrop for new players
+  // Sync balances when airdrop is confirmed
   useEffect(() => {
-    if (currentIsConnected && hasReceivedAirdrop === false && !airdropHook.isPending) {
-      console.log('New player detected, claiming airdrop...');
-      airdropHook.claimAirdrop();
+    if (airdropHook.isConfirmed) {
+      console.log('Airdrop confirmed, syncing balances...');
+      syncWithBlockchain();
     }
-  }, [currentIsConnected, hasReceivedAirdrop, airdropHook]);
+  }, [airdropHook.isConfirmed]);
+
+  // DISABLED: Auto-claim airdrop for new players - now manual only
+  // useEffect(() => {
+  //   if (currentIsConnected && hasReceivedAirdrop === false && !airdropHook.isPending && !airdropHook.isConfirming && !airdropAttempted) {
+  //     console.log('New player detected, claiming airdrop...');
+  //     setAirdropAttempted(true);
+  //     airdropHook.claimAirdrop();
+  //   }
+  // }, [currentIsConnected, hasReceivedAirdrop, airdropHook.isPending, airdropHook.isConfirming, airdropAttempted]);
+
+  // Reset airdrop attempted when airdrop is confirmed or when address changes
+  useEffect(() => {
+    if (airdropHook.isConfirmed || hasReceivedAirdrop === true) {
+      setAirdropAttempted(false);
+    }
+  }, [airdropHook.isConfirmed, hasReceivedAirdrop]);
+
+  // Reset airdrop attempted when address changes
+  useEffect(() => {
+    setAirdropAttempted(false);
+  }, [currentAddress]);
 
   // Claim tile function that interacts with blockchain
   const claimTileOnChain = async (x: number, y: number) => {
@@ -203,6 +225,7 @@ export function useGameWeb3() {
     // Contract interactions
     claimTileOnChain,
     harvestGemsOnChain,
+    claimAirdrop: () => airdropHook.claimAirdrop(),
     syncWithBlockchain,
 
     // Transaction states

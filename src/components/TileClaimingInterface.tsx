@@ -267,7 +267,7 @@ export function TileClaimingInterface({ selectedTile, onClaimSuccess }: TileClai
         <div className="mt-3 p-3 bg-green-100 border border-green-300 text-green-700 rounded-lg text-sm">
           <div className="flex items-center">
             <span className="mr-2">💡</span>
-            This tile will generate 1 GEM per hour once claimed!
+            This tile will generate 10 GEMS per hour once claimed!
           </div>
         </div>
       )}

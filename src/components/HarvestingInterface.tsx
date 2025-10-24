@@ -232,7 +232,7 @@ export function HarvestingInterface({ onHarvestSuccess }: HarvestingInterfacePro
           <span className="text-blue-700 font-medium">💡 Production Info:</span>
         </div>
         <ul className="text-xs text-blue-600 mt-2 space-y-1">
-          <li>• Each tile generates 1 GEM per hour</li>
+          <li>• Each tile generates 10 GEMS per hour</li>
           <li>• GEMS accumulate automatically while you're away</li>
           <li>• Harvest regularly to maximize your treasury</li>
           <li>• Use GEMS to claim new tiles and battle enemies</li>

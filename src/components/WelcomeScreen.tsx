@@ -1,18 +1,27 @@
 'use client';
 
-import { useState } from 'react';
-import { useGame } from '@/context/GameContext';
+import { useState, useEffect } from 'react';
+import { useGameIntegration } from '@/hooks/useGameIntegration';
 import { LoadingSpinner } from './LoadingSpinner';
+import { WalletConnection } from './WalletConnection';
 
 interface WelcomeScreenProps {
   onColonyCreated: () => void;
 }
 
 export function WelcomeScreen({ onColonyCreated }: WelcomeScreenProps) {
-  const { dispatch } = useGame();
+  const gameIntegration = useGameIntegration();
   const [colonyName, setColonyName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState('');
+
+  // Auto-load saved colony name when wallet connects
+  useEffect(() => {
+    if (gameIntegration.isConnected && gameIntegration.playerData.colony) {
+      // Colony already exists, skip welcome screen
+      onColonyCreated();
+    }
+  }, [gameIntegration.isConnected, gameIntegration.playerData.colony, onColonyCreated]);
 
 
 
@@ -30,23 +39,17 @@ export function WelcomeScreen({ onColonyCreated }: WelcomeScreenProps) {
       return;
     }
 
+    if (!gameIntegration.isConnected) {
+      setError('Please connect your wallet first');
+      return;
+    }
+
     setIsCreating(true);
     setError('');
 
     try {
-      // Simulate user ID (in real app, this would come from Farcaster auth)
-      const userId = `user_${Date.now()}`;
-      
-      // Small delay to show loading state
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      dispatch({
-        type: 'CREATE_COLONY',
-        payload: {
-          name: colonyName.trim(),
-          owner: userId,
-        },
-      });
+      // Create colony with wallet address as owner
+      await gameIntegration.createColony(colonyName.trim());
       
       onColonyCreated();
     } catch (err) {
@@ -70,6 +73,17 @@ export function WelcomeScreen({ onColonyCreated }: WelcomeScreenProps) {
           <p className="text-blue-200 text-lg">Claim. Harvest. Conquer.</p>
         </div>
 
+        {/* Wallet Connection */}
+        {!gameIntegration.isConnected && (
+          <div className="mb-6 p-4 bg-white/5 rounded-lg border border-white/10">
+            <h3 className="text-white font-semibold mb-3 text-center">Connect Your Wallet</h3>
+            <p className="text-blue-200 text-sm text-center mb-4">
+              Connect your wallet to start playing Cast Colony
+            </p>
+            <WalletConnection />
+          </div>
+        )}
+
         {/* Game Rules */}
         <div className="mb-8 p-4 bg-white/5 rounded-lg border border-white/10">
           <h2 className="text-white font-semibold mb-3 text-center">How to Play</h2>
@@ -80,7 +94,7 @@ export function WelcomeScreen({ onColonyCreated }: WelcomeScreenProps) {
             </li>
             <li className="flex items-start">
               <span className="text-yellow-400 mr-2">•</span>
-              <span>Harvest 1 GEM per tile per hour</span>
+              <span>Harvest 10 GEMS per tile per hour</span>
             </li>
             <li className="flex items-start">
               <span className="text-red-400 mr-2">•</span>
@@ -94,41 +108,52 @@ export function WelcomeScreen({ onColonyCreated }: WelcomeScreenProps) {
         </div>
 
         {/* Colony Creation Form */}
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="colonyName" className="block text-white font-medium mb-2">
-              Create Your Colony
-            </label>
-            <input
-              id="colonyName"
-              type="text"
-              value={colonyName}
-              onChange={handleInputChange}
-              placeholder="Enter colony name..."
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
-              maxLength={20}
-              disabled={isCreating}
-            />
-            {error && (
-              <p className="text-red-400 text-sm mt-2">{error}</p>
-            )}
-          </div>
+        {gameIntegration.isConnected && (
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="colonyName" className="block text-white font-medium mb-2">
+                Create Your Colony
+              </label>
+              <input
+                id="colonyName"
+                type="text"
+                value={colonyName}
+                onChange={handleInputChange}
+                placeholder="Enter colony name..."
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                maxLength={20}
+                disabled={isCreating}
+              />
+              {error && (
+                <p className="text-red-400 text-sm mt-2">{error}</p>
+              )}
+            </div>
 
-          <button
-            onClick={handleCreateColony}
-            disabled={isCreating || !colonyName.trim()}
-            className="w-full py-3 px-6 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-500 disabled:to-gray-600 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed shadow-lg"
-          >
-            {isCreating ? (
-              <div className="flex items-center justify-center">
-                <LoadingSpinner size="sm" color="white" className="mr-2" />
-                Creating Colony...
-              </div>
-            ) : (
-              'Start Your Colony'
-            )}
-          </button>
-        </div>
+            <button
+              onClick={handleCreateColony}
+              disabled={isCreating || !colonyName.trim()}
+              className="w-full py-3 px-6 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-500 disabled:to-gray-600 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed shadow-lg"
+            >
+              {isCreating ? (
+                <div className="flex items-center justify-center">
+                  <LoadingSpinner size="sm" color="white" className="mr-2" />
+                  Creating Colony...
+                </div>
+              ) : (
+                'Start Your Colony'
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* Show message when wallet is not connected */}
+        {!gameIntegration.isConnected && (
+          <div className="text-center">
+            <p className="text-blue-200 text-sm">
+              Please connect your wallet above to create your colony
+            </p>
+          </div>
+        )}
 
         {/* Starter Info */}
         <div className="mt-6 p-3 bg-green-500/20 border border-green-400/30 rounded-lg">

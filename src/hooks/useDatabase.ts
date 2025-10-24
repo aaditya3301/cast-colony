@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 
 export interface PlayerData {
   wallet_address: string;
+  colony_name?: string;
   has_received_airdrop: boolean;
   gems_balance: number;
   total_tiles_owned: number;

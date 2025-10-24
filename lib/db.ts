@@ -9,6 +9,7 @@ export const sql = neon(process.env.DATABASE_URL);
 // Database types
 export interface Player {
   wallet_address: string;
+  colony_name?: string;
   has_received_airdrop: boolean;
   gems_balance: number;
   total_tiles_owned: number;

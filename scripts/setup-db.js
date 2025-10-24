@@ -16,6 +16,7 @@ async function setupDatabase() {
     await sql`
       CREATE TABLE IF NOT EXISTS players (
         wallet_address VARCHAR(42) PRIMARY KEY,
+        colony_name VARCHAR(100),
         has_received_airdrop BOOLEAN DEFAULT FALSE,
         gems_balance INTEGER DEFAULT 0,
         total_tiles_owned INTEGER DEFAULT 0,

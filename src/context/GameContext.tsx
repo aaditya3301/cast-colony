@@ -52,7 +52,7 @@ const isAdjacent = (x: number, y: number, ownedTiles: TileData[]): boolean => {
 
 const calculateGemsAccumulated = (tile: TileData): number => {
     const hoursSinceLastHarvest = (Date.now() - tile.lastHarvest) / (1000 * 60 * 60);
-    return Math.floor(hoursSinceLastHarvest); // 1 GEM per hour
+    return Math.floor(hoursSinceLastHarvest * 10); // 10 GEMS per hour
 };
 
 // Reducer function

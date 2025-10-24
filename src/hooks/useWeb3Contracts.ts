@@ -1,6 +1,6 @@
 'use client';
 
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useSwitchChain } from 'wagmi';
 import { parseEther, formatEther } from 'viem';
 import { getCurrentContracts } from '@/contracts/addresses';
 import { GEMS_TOKEN_ABI, GAME_CONTRACT_ABI } from '@/contracts/abis';
@@ -14,6 +14,7 @@ export function useGemsBalance(address?: `0x${string}`) {
     abi: GEMS_TOKEN_ABI,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
+    chainId: contracts.chainId,
     query: {
       enabled: !!address && !!contracts.GEMS_TOKEN,
     },
@@ -27,6 +28,7 @@ export function useTilePrice(address?: `0x${string}`) {
     abi: GAME_CONTRACT_ABI,
     functionName: 'getTilePrice',
     args: address ? [address] : undefined,
+    chainId: contracts.chainId,
     query: {
       enabled: !!address && !!contracts.GAME_CONTRACT,
     },
@@ -39,6 +41,7 @@ export function usePlayerTileCount(address?: `0x${string}`) {
     abi: GAME_CONTRACT_ABI,
     functionName: 'getPlayerTileCount',
     args: address ? [address] : undefined,
+    chainId: contracts.chainId,
     query: {
       enabled: !!address && !!contracts.GAME_CONTRACT,
     },
@@ -51,6 +54,7 @@ export function useHasReceivedAirdrop(address?: `0x${string}`) {
     abi: GAME_CONTRACT_ABI,
     functionName: 'hasReceivedAirdrop',
     args: address ? [address] : undefined,
+    chainId: contracts.chainId,
     query: {
       enabled: !!address && !!contracts.GAME_CONTRACT,
     },
@@ -59,19 +63,29 @@ export function useHasReceivedAirdrop(address?: `0x${string}`) {
 
 export function useClaimTile() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
-  
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = 
-    useWaitForTransactionReceipt({ 
+  const { switchChain } = useSwitchChain();
+
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
       hash,
     });
 
-  const claimTile = (x: number, y: number) => {
-    writeContract({
-      address: contracts.GAME_CONTRACT as `0x${string}`,
-      abi: GAME_CONTRACT_ABI,
-      functionName: 'claimTile',
-      args: [BigInt(x), BigInt(y)],
-    });
+  const claimTile = async (x: number, y: number) => {
+    try {
+      // Switch to correct network first
+      await switchChain({ chainId: contracts.chainId });
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      writeContract({
+        address: contracts.GAME_CONTRACT as `0x${string}`,
+        abi: GAME_CONTRACT_ABI,
+        functionName: 'claimTile',
+        args: [BigInt(x), BigInt(y)],
+        chainId: contracts.chainId,
+      });
+    } catch (error) {
+      console.error('Error in claimTile:', error);
+    }
   };
 
   return {
@@ -86,20 +100,30 @@ export function useClaimTile() {
 
 export function useHarvestTiles() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
-  
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = 
-    useWaitForTransactionReceipt({ 
+  const { switchChain } = useSwitchChain();
+
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
       hash,
     });
 
-  const harvestTiles = (tileIds: number[]) => {
-    const bigIntIds = tileIds.map(id => BigInt(id));
-    writeContract({
-      address: contracts.GAME_CONTRACT as `0x${string}`,
-      abi: GAME_CONTRACT_ABI,
-      functionName: 'harvestTiles',
-      args: [bigIntIds],
-    });
+  const harvestTiles = async (tileIds: number[]) => {
+    try {
+      // Switch to correct network first
+      await switchChain({ chainId: contracts.chainId });
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const bigIntIds = tileIds.map(id => BigInt(id));
+      writeContract({
+        address: contracts.GAME_CONTRACT as `0x${string}`,
+        abi: GAME_CONTRACT_ABI,
+        functionName: 'harvestTiles',
+        args: [bigIntIds],
+        chainId: contracts.chainId,
+      });
+    } catch (error) {
+      console.error('Error in harvestTiles:', error);
+    }
   };
 
   return {
@@ -114,19 +138,36 @@ export function useHarvestTiles() {
 
 export function useAirdropNewPlayer() {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
-  
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = 
-    useWaitForTransactionReceipt({ 
+  const { switchChain } = useSwitchChain();
+
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
       hash,
     });
 
-  const claimAirdrop = () => {
-    writeContract({
-      address: contracts.GAME_CONTRACT as `0x${string}`,
-      abi: GAME_CONTRACT_ABI,
-      functionName: 'airdropNewPlayer',
-      args: [],
-    });
+  const claimAirdrop = async () => {
+    console.log('Attempting to claim airdrop with contract:', contracts.GAME_CONTRACT);
+    console.log('Chain ID:', contracts.chainId);
+
+    try {
+      // First, try to switch to the correct network
+      console.log('Switching to chain:', contracts.chainId);
+      await switchChain({ chainId: contracts.chainId });
+
+      // Small delay to ensure network switch is complete
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Then execute the transaction
+      writeContract({
+        address: contracts.GAME_CONTRACT as `0x${string}`,
+        abi: GAME_CONTRACT_ABI,
+        functionName: 'airdropNewPlayer',
+        args: [],
+        chainId: contracts.chainId,
+      });
+    } catch (error) {
+      console.error('Error in claimAirdrop:', error);
+    }
   };
 
   return {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useGame } from '@/context/GameContext';
-import { useGameWeb3 } from '@/hooks/useGameWeb3';
+import { useGameIntegration } from '@/hooks/useGameIntegration';
 import { WalletConnection } from './WalletConnection';
 
 interface ColonyDashboardProps {
@@ -12,7 +12,7 @@ interface ColonyDashboardProps {
 
 export function ColonyDashboard({ onHarvestAll, onClaimTile }: ColonyDashboardProps) {
   const { state, dispatch, getTotalHarvestableGems, canClaimTile } = useGame();
-  const { isConnected, gemsBalance, currentTilePrice, hasReceivedAirdrop, airdrop } = useGameWeb3();
+  const gameIntegration = useGameIntegration();
   const { userState, selectedTile } = state;
   const [currentTime, setCurrentTime] = useState(Date.now());
 
@@ -91,11 +91,25 @@ export function ColonyDashboard({ onHarvestAll, onClaimTile }: ColonyDashboardPr
             </p>
           </div>
           <div className="text-right">
-            <div className="text-3xl font-bold">
-              {isConnected ? parseInt(gemsBalance) : userState.treasury}
+            <div className="flex items-center justify-end gap-2 mb-1">
+              <div className="text-3xl font-bold">
+                {gameIntegration.isConnected ? parseInt(gameIntegration.gemsBalance) : userState.treasury}
+              </div>
+              {gameIntegration.isConnected && (
+                <button
+                  onClick={() => {
+                    console.log('Refreshing balance...');
+                    gameIntegration.syncWithBlockchain();
+                  }}
+                  className="p-1 text-purple-200 hover:text-white hover:bg-purple-600 rounded transition-colors"
+                  title="Refresh balance"
+                >
+                  🔄
+                </button>
+              )}
             </div>
             <div className="text-purple-100">
-              GEMS {isConnected && '(On-chain)'}
+              GEMS {gameIntegration.isConnected && '(On-chain)'}
             </div>
           </div>
         </div>
@@ -146,36 +160,47 @@ export function ColonyDashboard({ onHarvestAll, onClaimTile }: ColonyDashboardPr
         <WalletConnection />
         
         {/* Airdrop Status */}
-        {isConnected && (
+        {gameIntegration.isConnected && (
           <div className="mt-4 p-3 rounded-lg border">
-            {airdrop.isPending || airdrop.isConfirming ? (
+            {gameIntegration.transactions.airdrop.isPending || gameIntegration.transactions.airdrop.isConfirming ? (
               <div className="flex items-center text-blue-600">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
                 <span className="text-sm">
-                  {airdrop.isPending ? 'Claiming airdrop...' : 'Confirming airdrop...'}
+                  {gameIntegration.transactions.airdrop.isPending ? 'Claiming airdrop...' : 'Confirming airdrop...'}
                 </span>
               </div>
-            ) : hasReceivedAirdrop ? (
+            ) : gameIntegration.hasReceivedAirdrop ? (
               <div className="flex items-center text-green-600">
                 <span className="mr-2">✅</span>
                 <span className="text-sm">Airdrop received (100 GEMS)</span>
               </div>
             ) : (
-              <div className="flex items-center text-yellow-600">
-                <span className="mr-2">🎁</span>
-                <span className="text-sm">New player airdrop pending...</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center text-yellow-600">
+                  <span className="mr-2">🎁</span>
+                  <span className="text-sm">New player airdrop available</span>
+                </div>
+                <button
+                  onClick={() => {
+                    console.log('Manual airdrop claim triggered');
+                    gameIntegration.claimAirdrop();
+                  }}
+                  className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded"
+                >
+                  Claim 100 GEMS
+                </button>
               </div>
             )}
           </div>
         )}
         
         {/* Pricing Info */}
-        {isConnected && (
+        {gameIntegration.isConnected && (
           <div className="mt-3 p-3 bg-blue-50 rounded-lg">
             <div className="text-sm text-blue-800">
               <div className="flex justify-between">
                 <span>Next tile cost:</span>
-                <span className="font-medium">{currentTilePrice} GEMS</span>
+                <span className="font-medium">{gameIntegration.currentTilePrice} GEMS</span>
               </div>
               <div className="text-xs text-blue-600 mt-1">
                 Price increases by 50 GEMS per tile owned

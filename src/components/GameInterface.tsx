@@ -251,7 +251,7 @@ export function GameInterface() {
               <div className="text-3xl mb-2">🌾</div>
               <h4 className="font-semibold text-yellow-600 mb-2">Harvest Resources</h4>
               <p className="text-gray-600">
-                Each tile generates 1 GEM per hour. Harvest regularly to build your treasury.
+                Each tile generates 10 GEMS per hour. Harvest regularly to build your treasury.
               </p>
             </div>
             <div className="text-center">

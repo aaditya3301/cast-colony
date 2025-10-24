@@ -59,12 +59,14 @@ export async function POST(
     const result = await sql`
       INSERT INTO players (
         wallet_address, 
+        colony_name,
         has_received_airdrop, 
         gems_balance, 
         total_tiles_owned,
         updated_at
       ) VALUES (
         ${walletAddress},
+        ${body.colony_name || null},
         ${body.has_received_airdrop || false},
         ${body.gems_balance || 0},
         ${body.total_tiles_owned || 0},
@@ -72,6 +74,7 @@ export async function POST(
       )
       ON CONFLICT (wallet_address) 
       DO UPDATE SET
+        colony_name = COALESCE(EXCLUDED.colony_name, players.colony_name),
         has_received_airdrop = EXCLUDED.has_received_airdrop,
         gems_balance = EXCLUDED.gems_balance,
         total_tiles_owned = EXCLUDED.total_tiles_owned,
