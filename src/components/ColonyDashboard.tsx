@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useGame } from '@/context/GameContext';
 import { useGameIntegration } from '@/hooks/useGameIntegration';
 import { WalletConnection } from './WalletConnection';
+import { BuyGemsModal } from './BuyGemsModal';
 
 interface ColonyDashboardProps {
   onHarvestAll?: (gemsHarvested: number) => void;
@@ -15,6 +16,7 @@ export function ColonyDashboard({ onHarvestAll, onClaimTile }: ColonyDashboardPr
   const gameIntegration = useGameIntegration();
   const { userState, selectedTile } = state;
   const [currentTime, setCurrentTime] = useState(Date.now());
+  const [showBuyGemsModal, setShowBuyGemsModal] = useState(false);
 
   // Update current time every minute to refresh GEMS display
   useEffect(() => {
@@ -96,16 +98,25 @@ export function ColonyDashboard({ onHarvestAll, onClaimTile }: ColonyDashboardPr
                 {gameIntegration.isConnected ? parseInt(gameIntegration.gemsBalance) : userState.treasury}
               </div>
               {gameIntegration.isConnected && (
-                <button
-                  onClick={() => {
-                    console.log('Refreshing balance...');
-                    gameIntegration.syncWithBlockchain();
-                  }}
-                  className="p-1 text-purple-200 hover:text-white hover:bg-purple-600 rounded transition-colors"
-                  title="Refresh balance"
-                >
-                  🔄
-                </button>
+                <>
+                  <button
+                    onClick={() => setShowBuyGemsModal(true)}
+                    className="p-1 text-purple-200 hover:text-white hover:bg-purple-600 rounded transition-colors"
+                    title="Buy GEMS with ETH"
+                  >
+                    💎
+                  </button>
+                  <button
+                    onClick={() => {
+                      console.log('Refreshing balance...');
+                      gameIntegration.syncWithBlockchain();
+                    }}
+                    className="p-1 text-purple-200 hover:text-white hover:bg-purple-600 rounded transition-colors"
+                    title="Refresh balance"
+                  >
+                    🔄
+                  </button>
+                </>
               )}
             </div>
             <div className="text-purple-100">
@@ -210,46 +221,158 @@ export function ColonyDashboard({ onHarvestAll, onClaimTile }: ColonyDashboardPr
         )}
       </div>
 
-      {/* Action Buttons */}
-      <div className="bg-white p-4 rounded-lg shadow border">
-        <h3 className="font-semibold text-gray-800 mb-4">Actions</h3>
-        <div className="flex flex-wrap gap-3">
-          {/* Harvest Button */}
-          <button
-            onClick={handleHarvestAll}
-            disabled={harvestableGems === 0}
-            className="flex items-center px-4 py-2 bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-300 text-white font-medium rounded-lg transition-colors duration-200 disabled:cursor-not-allowed"
-          >
-            <span className="mr-2">🌾</span>
-            Harvest All ({harvestableGems} GEMS)
-          </button>
-
-          {/* Claim Tile Button */}
-          {selectedTile && (
+      {/* Manual Actions */}
+      {gameIntegration.isConnected && (
+        <div className="bg-white p-4 rounded-lg shadow border">
+          <h3 className="font-semibold text-gray-800 mb-4">Manual Actions</h3>
+          <div className="flex flex-wrap gap-3">
+            
+            {/* Manual Claim Tile Button - TESTING MODE */}
             <button
-              onClick={handleClaimSelectedTile}
-              disabled={!canClaimSelected || hasInsufficientFunds}
+              onClick={() => {
+                if (!selectedTile) {
+                  alert('Please select a tile on the map first');
+                  return;
+                }
+                if (!userState.colony) {
+                  alert('No colony found');
+                  return;
+                }
+                
+                console.log('UI-only tile claim for:', selectedTile);
+                
+                // Pure UI claim - no Web3, just update local state
+                dispatch({
+                  type: 'CLAIM_TILE',
+                  payload: {
+                    x: selectedTile.x,
+                    y: selectedTile.y,
+                    owner: userState.colony.owner
+                  }
+                });
+                
+                console.log('Tile claimed in UI state:', selectedTile);
+              }}
+              disabled={!selectedTile || !userState.colony}
               className="flex items-center px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white font-medium rounded-lg transition-colors duration-200 disabled:cursor-not-allowed"
             >
               <span className="mr-2">🏗️</span>
-              Claim Tile ({selectedTile.x}, {selectedTile.y})
-              {hasInsufficientFunds && (
-                <span className="ml-2 text-xs">(Need 100 GEMS)</span>
-              )}
+              {selectedTile ? `Claim Tile (${selectedTile.x}, ${selectedTile.y})` : 'Select Tile to Claim'}
             </button>
+
+            {/* Manual Harvest Button */}
+            <button
+              onClick={async () => {
+                try {
+                  console.log('Manual harvest all tiles');
+                  const tileIds = userState.ownedTiles.map((_, index) => index);
+                  if (tileIds.length === 0) {
+                    alert('No tiles to harvest');
+                    return;
+                  }
+                  await gameIntegration.harvestTiles(tileIds);
+                } catch (error) {
+                  console.error('Manual harvest failed:', error);
+                  alert('Harvest failed: ' + (error as Error).message);
+                }
+              }}
+              disabled={userState.ownedTiles.length === 0 || (gameIntegration.transactions.harvest.isPending && !gameIntegration.transactions.harvest.isConfirmed)}
+              className="flex items-center px-4 py-2 bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-300 text-white font-medium rounded-lg transition-colors duration-200 disabled:cursor-not-allowed"
+            >
+              <span className="mr-2">🌾</span>
+              {gameIntegration.transactions.harvest.isPending && !gameIntegration.transactions.harvest.isConfirmed ? 'Harvesting...' : 
+               gameIntegration.transactions.harvest.isConfirmed ? 'Harvest Complete ✅' :
+               `Harvest All (${harvestableGems} GEMS)`}
+            </button>
+
+            {/* Manual Refresh Territory Button */}
+            <button
+              onClick={() => {
+                console.log('Manual territory refresh');
+                gameIntegration.loadPlayerData();
+              }}
+              className="flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors duration-200"
+            >
+              <span className="mr-2">🔄</span>
+              Refresh Territory
+            </button>
+
+            {/* Force Database Sync Button */}
+            <button
+              onClick={async () => {
+                console.log('Force database sync');
+                try {
+                  // Force refresh blockchain data first
+                  await gameIntegration.syncWithBlockchain();
+                  // Then reload player data
+                  setTimeout(() => {
+                    gameIntegration.loadPlayerData();
+                  }, 2000);
+                } catch (error) {
+                  console.error('Sync failed:', error);
+                }
+              }}
+              className="flex items-center px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white font-medium rounded-lg transition-colors duration-200"
+            >
+              <span className="mr-2">⚡</span>
+              Force Sync
+            </button>
+
+            {/* Reset Transaction States Button */}
+            <button
+              onClick={() => {
+                console.log('Resetting transaction states - refreshing page...');
+                window.location.reload();
+              }}
+              className="flex items-center px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors duration-200"
+            >
+              <span className="mr-2">🔄</span>
+              Reset States
+            </button>
+          </div>
+
+          {/* Transaction Status */}
+          {(gameIntegration.transactions.claimTile.isPending || 
+            gameIntegration.transactions.claimTile.isConfirming ||
+            gameIntegration.transactions.harvest.isPending || 
+            gameIntegration.transactions.harvest.isConfirming) && 
+            !gameIntegration.transactions.claimTile.isConfirmed && 
+            !gameIntegration.transactions.harvest.isConfirmed && (
+            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center text-blue-600">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                <span className="text-sm">
+                  {gameIntegration.transactions.claimTile.isPending && !gameIntegration.transactions.claimTile.isConfirmed && 'Sending claim transaction...'}
+                  {gameIntegration.transactions.claimTile.isConfirming && !gameIntegration.transactions.claimTile.isConfirmed && 'Confirming claim transaction...'}
+                  {gameIntegration.transactions.harvest.isPending && !gameIntegration.transactions.harvest.isConfirmed && 'Sending harvest transaction...'}
+                  {gameIntegration.transactions.harvest.isConfirming && !gameIntegration.transactions.harvest.isConfirmed && 'Confirming harvest transaction...'}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Success Messages */}
+          {gameIntegration.transactions.claimTile.isConfirmed && (
+            <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center text-green-600">
+                <span className="mr-2">✅</span>
+                <span className="text-sm">Tile claim confirmed! Use "Refresh Territory" to update the map.</span>
+              </div>
+            </div>
+          )}
+
+          {gameIntegration.transactions.harvest.isConfirmed && (
+            <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center text-green-600">
+                <span className="mr-2">✅</span>
+                <span className="text-sm">Harvest confirmed! GEMS have been added to your balance.</span>
+              </div>
+            </div>
           )}
         </div>
+      )}
 
-        {/* Error Messages */}
-        {state.error && (
-          <div className="mt-3 p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg">
-            <div className="flex items-center">
-              <span className="mr-2">⚠️</span>
-              {state.error}
-            </div>
-          </div>
-        )}
-      </div>
+
 
       {/* Owned Tiles List */}
       {userState.ownedTiles.length > 0 && (
@@ -299,6 +422,12 @@ export function ColonyDashboard({ onHarvestAll, onClaimTile }: ColonyDashboardPr
           </div>
         </div>
       </div>
+      
+      {/* Buy GEMS Modal */}
+      <BuyGemsModal 
+        isOpen={showBuyGemsModal} 
+        onClose={() => setShowBuyGemsModal(false)} 
+      />
     </div>
   );
 }

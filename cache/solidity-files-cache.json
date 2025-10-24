@@ -40,8 +40,8 @@
       ]
     },
     "C:\\Users\\User\\OneDrive\\Desktop\\Base\\contracts\\GemsToken.sol": {
-      "lastModificationDate": 1761253913151,
-      "contentHash": "4d8676e36e224af35576701d81577a03",
+      "lastModificationDate": 1761343478495,
+      "contentHash": "7721b6d88f9b541cface408318c28d46",
       "sourceName": "contracts/GemsToken.sol",
       "solcConfig": {
         "version": "0.8.20",

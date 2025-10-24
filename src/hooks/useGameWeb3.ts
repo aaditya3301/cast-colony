@@ -10,6 +10,8 @@ import {
   useClaimTile,
   useHarvestTiles,
   useAirdropNewPlayer,
+  useBuyGems,
+  useGemsPerEth,
   formatGemsBalance 
 } from './useWeb3Contracts';
 import { useEffect, useState } from 'react';
@@ -50,6 +52,10 @@ export function useGameWeb3() {
   const tileClaimHook = useClaimTile();
   const harvestHook = useHarvestTiles();
   const airdropHook = useAirdropNewPlayer();
+  const buyGemsHook = useBuyGems();
+  
+  // Get exchange rate
+  const { data: gemsPerEth } = useGemsPerEth();
 
   // Sync on-chain GEMS balance with game state
   useEffect(() => {
@@ -90,6 +96,14 @@ export function useGameWeb3() {
     }
   }, [airdropHook.isConfirmed]);
 
+  // Sync balances when GEMS purchase is confirmed
+  useEffect(() => {
+    if (buyGemsHook.isConfirmed) {
+      console.log('GEMS purchase confirmed, syncing balances...');
+      syncWithBlockchain();
+    }
+  }, [buyGemsHook.isConfirmed]);
+
   // DISABLED: Auto-claim airdrop for new players - now manual only
   // useEffect(() => {
   //   if (currentIsConnected && hasReceivedAirdrop === false && !airdropHook.isPending && !airdropHook.isConfirming && !airdropAttempted) {
@@ -121,9 +135,12 @@ export function useGameWeb3() {
       const currentPrice = tilePrice && typeof tilePrice === 'bigint' ? parseInt(formatGemsBalance(tilePrice)) : 100;
       const currentBalance = gemsBalance && typeof gemsBalance === 'bigint' ? parseInt(formatGemsBalance(gemsBalance)) : 0;
       
-      if (currentBalance < currentPrice) {
-        throw new Error(`Insufficient GEMS (need ${currentPrice})`);
-      }
+      // TESTING MODE: Skip balance check for now
+      // if (currentBalance < currentPrice) {
+      //   throw new Error(`Insufficient GEMS (need ${currentPrice})`);
+      // }
+
+      console.log(`TESTING MODE: Claiming tile (${x}, ${y}) - Balance check skipped`);
 
       // Claim the tile on-chain
       tileClaimHook.claimTile(x, y);
@@ -226,7 +243,11 @@ export function useGameWeb3() {
     claimTileOnChain,
     harvestGemsOnChain,
     claimAirdrop: () => airdropHook.claimAirdrop(),
+    buyGems: (ethAmount: string) => buyGemsHook.buyGems(ethAmount),
     syncWithBlockchain,
+    
+    // Exchange rate info
+    gemsPerEth: gemsPerEth ? gemsPerEth.toString() : '5000',
 
     // Transaction states
     claimTile: {
@@ -251,6 +272,14 @@ export function useGameWeb3() {
       isConfirmed: airdropHook.isConfirmed,
       error: airdropHook.error,
       hash: airdropHook.hash,
+    },
+
+    buyGemsTransaction: {
+      isPending: buyGemsHook.isPending,
+      isConfirming: buyGemsHook.isConfirming,
+      isConfirmed: buyGemsHook.isConfirmed,
+      error: buyGemsHook.error,
+      hash: buyGemsHook.hash,
     },
 
     // Utility functions

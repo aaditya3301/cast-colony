@@ -20,23 +20,15 @@ export function TileClaimingInterface({ selectedTile, onClaimSuccess }: TileClai
   // Watch for successful tile claim transaction
   useEffect(() => {
     if (claimTile.isConfirmed && !isProcessing) {
-      // Transaction confirmed, update local game state
-      if (selectedTile && state.userState.colony) {
-        dispatch({
-          type: 'CLAIM_TILE',
-          payload: {
-            x: selectedTile.x,
-            y: selectedTile.y,
-            owner: state.userState.colony.owner,
-          },
-        });
-
-        if (onClaimSuccess) {
-          onClaimSuccess();
-        }
+      // Transaction confirmed, let the database sync handle state updates
+      console.log('Tile claim transaction confirmed');
+      setIsProcessing(false);
+      
+      if (onClaimSuccess) {
+        onClaimSuccess();
       }
     }
-  }, [claimTile.isConfirmed, selectedTile, state.userState.colony, dispatch, onClaimSuccess, isProcessing]);
+  }, [claimTile.isConfirmed, onClaimSuccess, isProcessing]);
 
   // Watch for transaction errors
   useEffect(() => {
@@ -57,6 +49,10 @@ export function TileClaimingInterface({ selectedTile, onClaimSuccess }: TileClai
   const hasInsufficientFunds = currentBalance < tilePrice;
 
   const getClaimabilityStatus = () => {
+    if (!isConnected) {
+      return { canClaim: false, reason: 'Connect wallet to claim tiles' };
+    }
+
     if (tile) {
       if (tile.owner === state.userState.colony?.owner) {
         return { canClaim: false, reason: 'You already own this tile' };
@@ -64,9 +60,10 @@ export function TileClaimingInterface({ selectedTile, onClaimSuccess }: TileClai
       return { canClaim: false, reason: 'This tile is owned by another colony' };
     }
 
-    if (hasInsufficientFunds) {
-      return { canClaim: false, reason: `Insufficient GEMS (need ${tilePrice})` };
-    }
+    // TESTING MODE: Skip insufficient funds check
+    // if (hasInsufficientFunds) {
+    //   return { canClaim: false, reason: `Insufficient GEMS (need ${tilePrice})` };
+    // }
 
     if (state.userState.ownedTiles.length === 0) {
       return { canClaim: true, reason: 'First tile can be claimed anywhere' };
@@ -91,22 +88,10 @@ export function TileClaimingInterface({ selectedTile, onClaimSuccess }: TileClai
         await claimTileOnChain(selectedTile.x, selectedTile.y);
         // The rest will be handled by the useEffect watching for confirmation
       } else {
-        // Fallback to local state only (for development/testing)
-        await new Promise(resolve => setTimeout(resolve, 300));
-
-        dispatch({
-          type: 'CLAIM_TILE',
-          payload: {
-            x: selectedTile.x,
-            y: selectedTile.y,
-            owner: state.userState.colony.owner,
-          },
-        });
-
-        if (onClaimSuccess) {
-          onClaimSuccess();
-        }
+        // Require wallet connection for claiming
+        setClaimError('Please connect your wallet to claim tiles');
         setIsProcessing(false);
+        return;
       }
     } catch (error: any) {
       setClaimError(error.message || 'Failed to claim tile. Please try again.');
@@ -142,20 +127,18 @@ export function TileClaimingInterface({ selectedTile, onClaimSuccess }: TileClai
           <div className="space-y-2 text-sm text-gray-600">
             <div className="flex justify-between">
               <span>Cost:</span>
-              <span className="font-medium">{tilePrice} GEMS</span>
+              <span className="font-medium text-green-600">FREE (Testing)</span>
             </div>
             <div className="flex justify-between">
               <span>Your Balance:</span>
-              <span className={`font-medium ${
-                currentBalance >= tilePrice ? 'text-green-600' : 'text-red-600'
-              }`}>
+              <span className="font-medium text-green-600">
                 {currentBalance} GEMS
               </span>
             </div>
             <div className="flex justify-between">
               <span>After Claiming:</span>
-              <span className="font-medium">
-                {currentBalance - tilePrice} GEMS
+              <span className="font-medium text-green-600">
+                {currentBalance} GEMS (No cost)
               </span>
             </div>
             {isConnected && (

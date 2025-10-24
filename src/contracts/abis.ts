@@ -17,6 +17,37 @@ export const GEMS_TOKEN_ABI = [
     ],
     "outputs": [{"name": "", "type": "bool", "internalType": "bool"}],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "buyGems",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "calculateGemsForEth",
+    "inputs": [{"name": "ethAmount", "type": "uint256", "internalType": "uint256"}],
+    "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "GEMS_PER_ETH",
+    "inputs": [],
+    "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+    "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "GemsPurchased",
+    "inputs": [
+      {"name": "buyer", "type": "address", "indexed": true, "internalType": "address"},
+      {"name": "ethAmount", "type": "uint256", "indexed": false, "internalType": "uint256"},
+      {"name": "gemsAmount", "type": "uint256", "indexed": false, "internalType": "uint256"}
+    ],
+    "anonymous": false
   }
 ];
 

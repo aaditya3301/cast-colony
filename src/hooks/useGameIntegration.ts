@@ -37,9 +37,21 @@ export function useGameIntegration() {
   // Load player data when wallet connects
   useEffect(() => {
     if (currentAddress && currentIsConnected) {
+      console.log('Wallet connected, loading territory data for:', currentAddress);
       loadPlayerData();
     }
   }, [currentAddress, currentIsConnected]);
+
+  // Also refresh when blockchain balance changes (indicates new transactions)
+  useEffect(() => {
+    if (currentAddress && currentIsConnected && web3.gemsBalance) {
+      console.log('GEMS balance changed, refreshing territory data...');
+      // Small delay to let database sync
+      setTimeout(() => {
+        loadPlayerData();
+      }, 1000);
+    }
+  }, [web3.gemsBalance, currentAddress, currentIsConnected]);
 
   const loadPlayerData = async () => {
     if (!currentAddress) return;
@@ -62,16 +74,21 @@ export function useGameIntegration() {
         }
 
         // Get player's tiles from database
-        const tiles = await db.getPlayerTiles(currentAddress);
+        const playerTiles = await db.getPlayerTiles(currentAddress);
+        console.log('Player tiles from database:', playerTiles);
         
         // Load all tiles for map
         const allTiles = await db.getAllTiles();
+        console.log('All tiles from database:', allTiles.length, 'total tiles');
+        console.log('Player owns', playerTiles.length, 'tiles');
 
         // Update game state with database data
         dispatch({
           type: 'LOAD_PLAYER_DATA',
           payload: { playerData, tiles: allTiles }
         });
+        
+        console.log('Territory data loaded - Player should own', playerTiles.length, 'tiles');
 
         // Create or update colony with saved name
         if (playerData.colony_name && !state.userState.colony) {
@@ -173,6 +190,25 @@ export function useGameIntegration() {
     }
   };
 
+  // Buy GEMS with ETH
+  const buyGems = async (ethAmount: string) => {
+    console.log('buyGems called, ethAmount:', ethAmount, 'currentAddress:', currentAddress);
+    
+    if (!currentAddress) throw new Error('Wallet not connected');
+    if (!ethAmount || parseFloat(ethAmount) <= 0) throw new Error('Invalid ETH amount');
+
+    try {
+      // Execute blockchain transaction
+      console.log('Calling web3.buyGems()...');
+      web3.buyGems(ethAmount);
+      
+      // Balance will be updated when transaction confirms
+    } catch (error) {
+      console.error('Error buying GEMS:', error);
+      throw error;
+    }
+  };
+
   // Handle transaction confirmations
   useEffect(() => {
     const handleTileClaimConfirmation = async () => {
@@ -180,6 +216,9 @@ export function useGameIntegration() {
         console.log('Tile claim confirmed, updating database...', pendingTileClaim);
         
         try {
+          // Small delay to ensure blockchain state is fully updated
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
           // Add tile to database
           await db.claimTile(
             pendingTileClaim.x, 
@@ -192,11 +231,27 @@ export function useGameIntegration() {
           setPendingTileClaim(null);
           
           // Refresh all data
-          loadPlayerData();
+          await loadPlayerData();
           
-          console.log('Tile successfully added to database');
+          console.log('Tile successfully added to database and game state updated');
         } catch (error) {
           console.error('Error adding tile to database:', error);
+          // Retry once after a longer delay
+          setTimeout(async () => {
+            try {
+              await db.claimTile(
+                pendingTileClaim.x, 
+                pendingTileClaim.y, 
+                currentAddress, 
+                web3.claimTile.hash
+              );
+              setPendingTileClaim(null);
+              await loadPlayerData();
+              console.log('Tile successfully added to database on retry');
+            } catch (retryError) {
+              console.error('Retry failed:', retryError);
+            }
+          }, 5000);
         }
       }
     };
@@ -212,6 +267,15 @@ export function useGameIntegration() {
       loadPlayerData();
     }
   }, [web3.airdrop.isConfirmed, currentAddress]);
+
+  useEffect(() => {
+    if (web3.buyGemsTransaction.isConfirmed && currentAddress) {
+      // GEMS purchase confirmed - refresh data and force balance sync
+      console.log('GEMS purchase confirmed, refreshing all data...');
+      web3.syncWithBlockchain();
+      loadPlayerData();
+    }
+  }, [web3.buyGemsTransaction.isConfirmed, currentAddress]);
 
   useEffect(() => {
     if (web3.harvest.isConfirmed && currentAddress) {
@@ -248,14 +312,19 @@ export function useGameIntegration() {
     claimTile,
     harvestTiles,
     claimAirdrop,
+    buyGems,
     loadPlayerData,
     syncWithBlockchain: web3.syncWithBlockchain,
+    
+    // Exchange rate info
+    gemsPerEth: web3.gemsPerEth,
 
     // Transaction states
     transactions: {
       claimTile: web3.claimTile,
       harvest: web3.harvest,
       airdrop: web3.airdrop,
+      buyGems: web3.buyGemsTransaction,
     },
 
     // Database operations

@@ -180,6 +180,68 @@ export function useAirdropNewPlayer() {
   };
 }
 
+export function useBuyGems() {
+  const { writeContract, data: hash, isPending, error } = useWriteContract();
+  const { switchChain } = useSwitchChain();
+
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
+      hash,
+    });
+
+  const buyGems = async (ethAmount: string) => {
+    try {
+      // Switch to correct network first
+      await switchChain({ chainId: contracts.chainId });
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      console.log('Buying GEMS with ETH amount:', ethAmount);
+      writeContract({
+        address: contracts.GEMS_TOKEN as `0x${string}`,
+        abi: GEMS_TOKEN_ABI,
+        functionName: 'buyGems',
+        value: parseEther(ethAmount),
+        chainId: contracts.chainId,
+      });
+    } catch (error) {
+      console.error('Error in buyGems:', error);
+    }
+  };
+
+  return {
+    buyGems,
+    hash,
+    isPending,
+    isConfirming,
+    isConfirmed,
+    error,
+  };
+}
+
+// Get GEMS per ETH rate from contract
+export function useGemsPerEth() {
+  return useReadContract({
+    address: contracts.GEMS_TOKEN as `0x${string}`,
+    abi: GEMS_TOKEN_ABI,
+    functionName: 'GEMS_PER_ETH',
+    chainId: contracts.chainId,
+  });
+}
+
+// Calculate GEMS for ETH amount
+export function useCalculateGemsForEth(ethAmount?: string) {
+  return useReadContract({
+    address: contracts.GEMS_TOKEN as `0x${string}`,
+    abi: GEMS_TOKEN_ABI,
+    functionName: 'calculateGemsForEth',
+    args: ethAmount ? [parseEther(ethAmount)] : undefined,
+    chainId: contracts.chainId,
+    query: {
+      enabled: !!ethAmount && parseFloat(ethAmount) > 0,
+    },
+  });
+}
+
 // Utility functions
 export function formatGemsBalance(balance?: bigint): string {
   if (!balance) return '0';

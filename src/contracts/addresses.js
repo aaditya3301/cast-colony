@@ -2,12 +2,12 @@
 export const CONTRACTS = {
   // Base Sepolia Testnet
   baseSepolia: {
-    GEMS_TOKEN: "0xCB073288Acb084820B3FFB0E0f7b22c37F5a074b",
-    GAME_CONTRACT: "0x2bc9418D9b507D6F803895a2F4E5F4aE51087864",
+    GEMS_TOKEN: "0x5570495E9e6504369D13b5215d6dDC047D8b7F24",
+    GAME_CONTRACT: "0xb46921A5D008Bd81b1eC30Bce231440671B072ff",
     chainId: 84532,
     rpcUrl: "https://sepolia.base.org"
   },
-  
+
   // Base Mainnet (for later)
   base: {
     GEMS_TOKEN: "", // Will be deployed

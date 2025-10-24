@@ -380,7 +380,9 @@ function gameReducer(state: AppState, action: GameAction): AppState {
                 gameStateMap.set(tileKey, gameTile);
                 
                 // Add to owned tiles if this player owns it
-                if (state.userState.colony && tile.owner_address === state.userState.colony.owner) {
+                // Check against both colony owner and playerData wallet address
+                const currentOwner = state.userState.colony?.owner || (playerData && playerData.wallet_address);
+                if (currentOwner && tile.owner_address === currentOwner) {
                     ownedTiles.push(gameTile);
                 }
             });
@@ -393,11 +395,11 @@ function gameReducer(state: AppState, action: GameAction): AppState {
                 },
                 userState: {
                     ...state.userState,
-                    treasury: playerData.gems_balance || 0,
+                    treasury: playerData?.gems_balance || 0,
                     ownedTiles,
                     colony: state.userState.colony ? {
                         ...state.userState.colony,
-                        totalTiles: playerData.total_tiles_owned || 0,
+                        totalTiles: ownedTiles.length, // Use actual owned tiles count
                     } : null,
                 },
             };
