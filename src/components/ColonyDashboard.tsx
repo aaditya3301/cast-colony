@@ -218,6 +218,29 @@ export function ColonyDashboard({ onHarvestAll, onClaimTile }: ColonyDashboardPr
             <span className="mr-2">🌾</span>
             Harvest All ({harvestableGems} GEMS)
           </button>
+
+          {/* Airdrop Button - Show for connected wallets who haven't received airdrop */}
+          {gameIntegration.isConnected && !gameIntegration.hasReceivedAirdrop && (
+            <button
+              onClick={() => {
+                console.log('Claiming airdrop...');
+                console.log('hasReceivedAirdrop:', gameIntegration.hasReceivedAirdrop);
+                gameIntegration.claimAirdrop();
+              }}
+              disabled={gameIntegration.transactions.airdrop.isPending || gameIntegration.transactions.airdrop.isConfirming}
+              className="flex items-center px-6 py-3 bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white font-medium rounded-lg transition-colors duration-200 disabled:cursor-not-allowed"
+            >
+              <span className="mr-2"></span>
+              {gameIntegration.transactions.airdrop.isPending || gameIntegration.transactions.airdrop.isConfirming ? (
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  {gameIntegration.transactions.airdrop.isPending ? 'Claiming...' : 'Confirming...'}
+                </div>
+              ) : (
+                'Claim Free 100 GEMS'
+              )}
+            </button>
+          )}
         </div>
       </div>
 

@@ -25,7 +25,7 @@ export function WalletConnection() {
       const sdk = window.farcaster || window.farcasterSdk;
       if (sdk && sdk.context) {
         setIsInFarcaster(true);
-        
+
         // Check if wallet is already connected in Farcaster
         if (sdk.context.wallet) {
           setFarcasterWallet(sdk.context.wallet);
@@ -37,7 +37,7 @@ export function WalletConnection() {
     // Check immediately and after a short delay (for SDK loading)
     checkFarcasterEnvironment();
     const timer = setTimeout(checkFarcasterEnvironment, 1000);
-    
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -51,7 +51,7 @@ export function WalletConnection() {
       // Request wallet connection through Farcaster
       if (sdk.actions && sdk.actions.walletConnect) {
         await sdk.actions.walletConnect();
-        
+
         // Check for wallet context after connection
         if (sdk.context && sdk.context.wallet) {
           setFarcasterWallet(sdk.context.wallet);
@@ -64,7 +64,7 @@ export function WalletConnection() {
   };
 
   const handleRegularConnect = () => {
-    connect({ 
+    connect({
       connector: coinbaseWallet({
         appName: 'Cast Colony',
         preference: 'smartWalletOnly',
@@ -126,10 +126,10 @@ export function WalletConnection() {
           disabled={isPending}
           className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-colors text-white"
         >
-          {isPending ? 'Connecting...' : 'Connect Coinbase Smart Wallet'}
+          {isPending ? 'Connecting...' : 'Connect Coinbase Wallet'}
         </button>
       )}
-      
+
 
     </div>
   );

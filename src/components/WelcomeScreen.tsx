@@ -50,7 +50,7 @@ export function WelcomeScreen({ onColonyCreated }: WelcomeScreenProps) {
     try {
       // Create colony with wallet address as owner
       await gameIntegration.createColony(colonyName.trim());
-      
+
       onColonyCreated();
     } catch (err) {
       setError('Failed to create colony. Please try again.');
@@ -78,7 +78,7 @@ export function WelcomeScreen({ onColonyCreated }: WelcomeScreenProps) {
           <div className="mb-6 p-4 bg-white/5 rounded-lg border border-white/10">
             <h3 className="text-white font-semibold mb-3 text-center">Connect Your Wallet</h3>
             <p className="text-blue-200 text-sm text-center mb-4">
-              Connect your wallet to start playing Cast Colony
+              Connect wallet to start playing Cast Colony
             </p>
             <WalletConnection />
           </div>

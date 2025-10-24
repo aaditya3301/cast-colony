@@ -137,7 +137,7 @@ export function HarvestingInterface({ onHarvestSuccess }: HarvestingInterfacePro
         </div>
         <div className="flex items-center justify-between text-sm text-gray-600 mb-1">
           <span>Production Rate:</span>
-          <span>{state.userState.ownedTiles.length} GEMS/hour</span>
+          <span>{state.userState.ownedTiles.length * 10} GEMS/hour</span>
         </div>
         {isConnected && (
           <div className="flex items-center justify-between text-sm text-gray-600">
