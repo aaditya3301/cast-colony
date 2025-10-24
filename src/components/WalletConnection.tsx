@@ -130,10 +130,7 @@ export function WalletConnection() {
         </button>
       )}
       
-      {/* Environment indicator */}
-      <div className="text-xs text-gray-500 text-center">
-        {isInFarcaster ? '🟣 Running in Farcaster' : '🌐 Running in Browser'}
-      </div>
+
     </div>
   );
 }

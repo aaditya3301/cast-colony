@@ -6,63 +6,14 @@ import { AppState, GameAction, TileData, ColonyData } from '@/types/game';
 // Helper functions
 const getTileKey = (x: number, y: number): string => `${x},${y}`;
 
-// Initial state with some demo enemy tiles
+// Initial state - clean map, no demo data
 const createInitialTiles = (): Map<string, TileData> => {
-    const tiles = new Map<string, TileData>();
-    
-    // Try to load tiles from localStorage first (only on client side)
-    if (typeof window !== 'undefined') {
-        try {
-            const savedTiles = localStorage.getItem('castColony_tiles');
-            if (savedTiles) {
-                const tilesArray = JSON.parse(savedTiles);
-                tilesArray.forEach(([key, tile]: [string, TileData]) => {
-                    tiles.set(key, tile);
-                });
-                console.log('Loaded tiles from localStorage:', tiles.size);
-                return tiles;
-            }
-        } catch (error) {
-            console.warn('Failed to load tiles from localStorage:', error);
-        }
-    }
-    
-    // Add some enemy tiles for demo purposes (only if no saved tiles)
-    const enemyTiles = [
-        { x: 5, y: 5, owner: 'enemy_player_1' },
-        { x: 6, y: 5, owner: 'enemy_player_1' },
-        { x: 7, y: 3, owner: 'enemy_player_2' },
-        { x: 2, y: 8, owner: 'enemy_player_2' },
-    ];
-    
-    enemyTiles.forEach(({ x, y, owner }) => {
-        tiles.set(getTileKey(x, y), {
-            x,
-            y,
-            owner,
-            gemsAccumulated: Math.floor(Math.random() * 5), // Random accumulated GEMS
-            lastHarvest: Date.now() - Math.random() * 2 * 60 * 60 * 1000, // Random last harvest within 2 hours
-        });
-    });
-    
-    return tiles;
+    return new Map<string, TileData>();
 };
 
-// Load owned tiles from localStorage
+// Load owned tiles - will be loaded from database
 const loadOwnedTiles = (): TileData[] => {
-    if (typeof window === 'undefined') return []; // SSR check
-    
-    try {
-        const savedOwnedTiles = localStorage.getItem('castColony_ownedTiles');
-        if (savedOwnedTiles) {
-            const ownedTiles = JSON.parse(savedOwnedTiles);
-            console.log('Loaded owned tiles from localStorage:', ownedTiles.length);
-            return ownedTiles;
-        }
-    } catch (error) {
-        console.warn('Failed to load owned tiles from localStorage:', error);
-    }
-    return [];
+    return []; // Clean start - tiles will be loaded from database
 };
 
 const initialState: AppState = {
@@ -121,7 +72,7 @@ function gameReducer(state: AppState, action: GameAction): AppState {
                 userState: {
                     ...state.userState,
                     colony: newColony,
-                    treasury: 100, // Starter GEMS
+                    treasury: 0, // No starter GEMS - must claim airdrop
                 },
                 error: null,
             };
@@ -172,15 +123,7 @@ function gameReducer(state: AppState, action: GameAction): AppState {
                 error: null,
             };
 
-            // Save to localStorage for persistence (only on client side)
-            if (typeof window !== 'undefined') {
-                try {
-                    localStorage.setItem('castColony_tiles', JSON.stringify(Array.from(newTiles.entries())));
-                    localStorage.setItem('castColony_ownedTiles', JSON.stringify(updatedOwnedTiles));
-                } catch (error) {
-                    console.warn('Failed to save tiles to localStorage:', error);
-                }
-            }
+            // Data will be persisted to database via API calls
 
             return newState;
         }
@@ -413,6 +356,49 @@ function gameReducer(state: AppState, action: GameAction): AppState {
                 userState: {
                     ...state.userState,
                     treasury: action.payload.balance,
+                },
+            };
+        }
+
+        case 'LOAD_PLAYER_DATA': {
+            const { playerData, tiles } = action.payload;
+            
+            // Convert database tiles to game tiles
+            const gameStateMap = new Map<string, TileData>();
+            const ownedTiles: TileData[] = [];
+            
+            tiles.forEach((tile: any) => {
+                const tileKey = getTileKey(tile.x, tile.y);
+                const gameTile: TileData = {
+                    x: tile.x,
+                    y: tile.y,
+                    owner: tile.owner_address,
+                    gemsAccumulated: tile.gems_accumulated || 0,
+                    lastHarvest: new Date(tile.last_harvest).getTime(),
+                };
+                
+                gameStateMap.set(tileKey, gameTile);
+                
+                // Add to owned tiles if this player owns it
+                if (state.userState.colony && tile.owner_address === state.userState.colony.owner) {
+                    ownedTiles.push(gameTile);
+                }
+            });
+
+            return {
+                ...state,
+                gameState: {
+                    ...state.gameState,
+                    tiles: gameStateMap,
+                },
+                userState: {
+                    ...state.userState,
+                    treasury: playerData.gems_balance || 0,
+                    ownedTiles,
+                    colony: state.userState.colony ? {
+                        ...state.userState.colony,
+                        totalTiles: playerData.total_tiles_owned || 0,
+                    } : null,
                 },
             };
         }
