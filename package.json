@@ -35,5 +35,10 @@
     "hardhat": "^2.26.3",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "use-sync-external-store": "^1.2.2"
   }
 }
