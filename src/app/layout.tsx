@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   other: {
     "fc:miniapp": JSON.stringify({
       version: "1",
-      imageUrl: "https://cast-colony.vercel.app/api/og",
+      imageUrl: "https://cast-colony.vercel.app/assets/screenshot-main.png",
       button: {
         title: "Play Cast Colony",
         action: {
