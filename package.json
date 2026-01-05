@@ -16,7 +16,7 @@
     "@wagmi/connectors": "^6.1.0",
     "@wagmi/core": "^2.22.1",
     "ethers": "^6.15.0",
-    "next": "16.0.0",
+    "next": "16.0.10",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "viem": "^2.38.3",
